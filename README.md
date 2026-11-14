@@ -9,6 +9,8 @@ Entstanden im Anschluss an den Vortrag *Kubernetes Operators in Rust* (Labortage
 Die VM läuft mit [Lima](https://lima-vm.io) auf Apples Virtualization.framework: schnell, sparsam, Fenster direkt auf
 dem Mac, kein XQuartz, keine VM-Lizenz.
 
+Eine Kurzdoku der fertigen VM (Ordner, Werkzeuge, Alltag) steht in [`docs/VM.md`](docs/VM.md).
+
 ## Voraussetzungen
 
 - Mac mit Apple Silicon, macOS 13 oder neuer, [Homebrew](https://brew.sh)

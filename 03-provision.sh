@@ -15,6 +15,11 @@ limactl shell --workdir / "$VM_NAME" -- sudo env LAB_USER="$LAB_USER" bash -s < 
 log "Rust-Toolchain, Cargo-Werkzeuge, IDE-Erweiterungen, Podman-Konfiguration (als $LAB_USER)"
 vm_sh bash -s < "$LAB_DIR/guest/user.sh"
 
+log "KI-Werkzeuge: Node.js (root)"
+limactl shell --workdir / "$VM_NAME" -- sudo bash -s < "$LAB_DIR/guest/ai-root.sh"
+log "KI-Werkzeuge: Claude Code, OpenCode, Qwen Code, Erweiterungen (als $LAB_USER)"
+vm_sh bash -s < "$LAB_DIR/guest/ai-user.sh"
+
 # Neustart, wenn sich Locale, Anmeldung oder systemd-Delegation geändert haben
 if [ "$(vm_sh cat /var/lib/lab/needs-reboot 2>/dev/null || true)" = "1" ]; then
   log "Neustart der VM (Locale, Desktop, cgroup-Delegation)"
