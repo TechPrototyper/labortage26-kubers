@@ -30,7 +30,7 @@ ln -sfn /mnt/code "$base/code"
 GUEST
 
 # Fallback: Repo nicht per git in der VM vorhanden -> lokalen Stand vom Mac hinüberkopieren
-if ! vm_sh test -d Projects/kubers/labortage26-kubers/.git 2>/dev/null; then
+if ! vm_sh bash -c 'test -d "$HOME/Projects/kubers/labortage26-kubers/.git"' 2>/dev/null; then
   log "Kopiere dieses Repository vom Mac in die VM"
   vm_sh bash -c 'mkdir -p "$HOME/Projects/kubers/labortage26-kubers"'
   limactl copy -r "$LAB_DIR/." "$VM_NAME:Projects/kubers/labortage26-kubers/"
