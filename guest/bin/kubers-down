@@ -1,0 +1,9 @@
+#!/bin/bash
+# kubers-down: Cluster und Registry entfernen (Images in der Registry gehen verloren).
+set -uo pipefail
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+CLUSTER="${KUBERS_CLUSTER:-lab-cluster}"
+REGISTRY="${KUBERS_REGISTRY:-lab-registry.localhost}"
+k3p cluster delete "$CLUSTER" 2>&1 | tail -2
+k3p registry delete "k3d-$REGISTRY" 2>&1 | tail -2
+podman network rm "k3d-$CLUSTER" >/dev/null 2>&1 || true

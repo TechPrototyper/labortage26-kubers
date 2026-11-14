@@ -1,0 +1,8 @@
+#!/bin/sh
+# k3p: k3d über rootless Podman (aus dem Vortrag "Kubernetes Operators in Rust", CC BY 4.0, CyReVolt)
+# Siehe https://k3d.io/v5.9.0/usage/advanced/podman/
+XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+export XDG_RUNTIME_DIR
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/podman/podman.sock
+export DOCKER_SOCK=$XDG_RUNTIME_DIR/podman/podman.sock
+exec k3d "$@"

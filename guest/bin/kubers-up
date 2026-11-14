@@ -1,0 +1,34 @@
+#!/bin/bash
+# kubers-up: lokale Registry (k3d-lab-registry.localhost:5000) und k3d-Cluster "lab-cluster" über rootless Podman
+# starten bzw. wiederherstellen. Idempotent: vorhandenes wird nicht neu angelegt.
+set -euo pipefail
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+CLUSTER="${KUBERS_CLUSTER:-lab-cluster}"
+REGISTRY="${KUBERS_REGISTRY:-lab-registry.localhost}"
+PORT="${KUBERS_REGISTRY_PORT:-5000}"
+
+systemctl --user enable --now podman.socket >/dev/null 2>&1 || true
+[ -S "$XDG_RUNTIME_DIR/podman/podman.sock" ] || { echo "podman.socket nicht erreichbar" >&2; exit 1; }
+
+# Netzwerk mit DNS (aardvark-dns); Name ist k3d-<Clustername>
+podman network exists "k3d-$CLUSTER" 2>/dev/null || podman network create "k3d-$CLUSTER" >/dev/null
+
+if k3p registry list 2>/dev/null | grep -q "k3d-$REGISTRY"; then
+  echo "Registry k3d-$REGISTRY vorhanden"
+  k3p registry list 2>/dev/null | grep -q "k3d-$REGISTRY.*running" || podman start "k3d-$REGISTRY" >/dev/null 2>&1 || true
+else
+  k3p registry create --default-network "k3d-$CLUSTER" --port "$PORT" "$REGISTRY"
+fi
+
+if k3p cluster list 2>/dev/null | awk 'NR>1{print $1}' | grep -qx "$CLUSTER"; then
+  echo "Cluster $CLUSTER vorhanden"
+  k3p cluster start "$CLUSTER" >/dev/null 2>&1 || true
+else
+  k3p cluster create "$CLUSTER" \
+    --registry-use "k3d-$REGISTRY:$PORT" \
+    --k3s-arg '--kubelet-arg=feature-gates=KubeletInUserNamespace=true@server:*' \
+    --wait --timeout 300s
+fi
+kubectl config use-context "k3d-$CLUSTER" >/dev/null
+kubectl get nodes
+echo "Registry: k3d-$REGISTRY.localhost:$PORT  (podman push ...)"

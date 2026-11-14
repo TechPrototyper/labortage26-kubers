@@ -1,0 +1,33 @@
+#!/bin/bash
+# kubers-laboperator [build|image|push|deploy|all]
+# Baut und deployt das Beispielprojekt laboperator (Rust) auf dem lokalen k3d-Cluster.
+#
+# Hinweis ARM: Das Makefile des Projekts baut für x86_64-unknown-linux-musl und das Containerfile erwartet
+# genau diesen Pfad. Die VM ist aarch64, deshalb wird nativ für aarch64-unknown-linux-musl gebaut und
+# target/x86_64-unknown-linux-musl als Verknüpfung auf das aarch64-Verzeichnis gelegt. Das Projekt selbst
+# bleibt unverändert.
+set -euo pipefail
+dir="${LABOPERATOR_DIR:-$HOME/Projects/kubers/laboperator}"
+cd "$dir"
+case "$(uname -m)" in
+  aarch64) T=aarch64-unknown-linux-musl ;;
+  x86_64)  T=x86_64-unknown-linux-musl ;;
+  *) echo "Unbekannte Architektur $(uname -m)" >&2; exit 1 ;;
+esac
+export CC_aarch64_unknown_linux_musl="${CC_aarch64_unknown_linux_musl:-musl-gcc}"
+
+do_build()  { make prepare TARGET="$T"; make static TARGET="$T"
+              [ "$T" = x86_64-unknown-linux-musl ] || ln -sfn "$T" target/x86_64-unknown-linux-musl; }
+do_image()  { make image; }
+do_push()   { make push; }
+# CLUSTERROLEBINDING explizit setzen: im Makefile zeigt die Variable aus Versehen auf clusterrole.yaml
+do_deploy() { make deploy CLUSTERROLEBINDING=clusterrolebinding.yaml; }
+
+case "${1:-all}" in
+  build)  do_build ;;
+  image)  do_image ;;
+  push)   do_push ;;
+  deploy) do_deploy ;;
+  all)    do_build; do_image; do_push; do_deploy ;;
+  *) echo "usage: kubers-laboperator [build|image|push|deploy|all]" >&2; exit 2 ;;
+esac
